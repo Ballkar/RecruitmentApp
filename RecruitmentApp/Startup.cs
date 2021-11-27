@@ -153,12 +153,12 @@ namespace RecruitmentApp
 
             app.UseAuthorization();
 
+            app.UseCors("FrontEndClient");
             app.UseEndpoints(endpoints =>
             {
                 //endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
-
         }
     }
 }

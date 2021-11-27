@@ -27,7 +27,7 @@ namespace RecruitmentApp.Services
         Task<ResumeDto> GetByIdAsync(int id);
         void AttachExperience(AttachExperienceDto dto);
         void DetachExperience(DetachExperienceDto dto);
-        PagedResult<ResumeDtoList> GetUserResumes(ResumeQuery query);
+        PagedResult<ResumeDtoList> GetUserResumes(OnlyPaginationQuery query);
     }
     public class ResumeService : IResumeService
     {
@@ -191,11 +191,19 @@ namespace RecruitmentApp.Services
         {
             var baseQuery = _dbContext
                 .Resumes
-                .Where(
-                        r => query.SearchPhrase == null ||
-                        (r.Name.ToLower().Contains(query.SearchPhrase.ToLower()) || r.Surname.ToLower().Contains(query.SearchPhrase.ToLower())) ||
-                        r.City.ToLower().Contains(query.Location.ToLower())
-                      );
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(query.SearchPhrase))
+            {
+                var search = query.SearchPhrase.ToLower();
+                baseQuery = baseQuery.Where(r => r.Name.ToLower().Contains(search) || r.Surname.ToLower().Contains(search));
+            }
+
+            if (!string.IsNullOrEmpty(query.Location))
+            {
+                var location = query.Location.ToLower();
+                baseQuery = baseQuery.Where(r => r.City.ToLower().Contains(location));
+            }
 
             if (!string.IsNullOrEmpty(query.SortBy))
             {
@@ -207,17 +215,20 @@ namespace RecruitmentApp.Services
 
                 var selectedColumn = columnsSelectors[query.SortBy];
 
-                baseQuery = query.SortDirection == SortDirection.ASC
+                baseQuery = (query.SortDirection == SortDirection.ASC
                     ? baseQuery.OrderBy(selectedColumn)
-                    : baseQuery.OrderByDescending(selectedColumn);
+                    : baseQuery.OrderByDescending(selectedColumn));
             }
 
+            var totalItemsCount = baseQuery.Count();
+            
+            var CurrentPage = Convert.ToBoolean(query.PageNumber) ? query.PageNumber : 1;
+            var PageSize = Convert.ToBoolean(query.PageSize) ? query.PageSize : 5;
             var resumes = baseQuery
-                .Skip(query.PageSize * (query.PageNumber - 1))
-                .Take(query.PageSize)
+                .Skip(PageSize * (CurrentPage - 1))
+                .Take(PageSize)
                 .ToList();
 
-            var totalItemsCount = baseQuery.Count();
 
             var resumeDtos = _mapper.Map<List<ResumeDtoList>>(resumes);
 
@@ -285,29 +296,11 @@ namespace RecruitmentApp.Services
             _dbContext.SaveChanges();
         }
 
-        public PagedResult<ResumeDtoList> GetUserResumes(ResumeQuery query)
+        public PagedResult<ResumeDtoList> GetUserResumes(OnlyPaginationQuery query)
         {
             var baseQuery = _dbContext
                 .Resumes
-                .Where(
-                        r => query.SearchPhrase == null && r.UserId == _userContextService.GetUserId ||
-                        (r.Name.ToLower().Contains(query.SearchPhrase.ToLower()) && r.UserId == _userContextService.GetUserId || r.Surname.ToLower().Contains(query.SearchPhrase.ToLower()) && r.UserId == _userContextService.GetUserId) 
-                      );
-
-            if (!string.IsNullOrEmpty(query.SortBy))
-            {
-                var columnsSelectors = new Dictionary<string, Expression<Func<Resume, object>>>
-                {
-                    { nameof(Resume.Name), r => r.Name },
-                    { nameof(Resume.Surname), r => r.Surname }
-                };
-
-                var selectedColumn = columnsSelectors[query.SortBy];
-
-                baseQuery = query.SortDirection == SortDirection.ASC
-                    ? baseQuery.OrderBy(selectedColumn)
-                    : baseQuery.OrderByDescending(selectedColumn);
-            }
+                .Where(r => r.UserId == _userContextService.GetUserId);
 
             var resumes = baseQuery
                 .Skip(query.PageSize * (query.PageNumber - 1))

@@ -39,8 +39,9 @@ namespace RecruitmentApp.Controllers
 
             return Ok(resumeDtos);
         }
-        [HttpGet("/api/resume/GetUserResumes")]
-        public ActionResult<IEnumerable<ResumeDtoList>> GetUserResumes([FromQuery] ResumeQuery query)
+
+        [HttpGet("GetUserResumes")]
+        public ActionResult<IEnumerable<ResumeDtoList>> GetUserResumes([FromQuery] OnlyPaginationQuery query)
         {
             var resumeDtos = _resumeService.GetUserResumes(query);
 
