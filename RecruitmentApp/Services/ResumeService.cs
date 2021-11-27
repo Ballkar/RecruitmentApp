@@ -117,7 +117,8 @@ namespace RecruitmentApp.Services
         public async Task<ResumeDto> GetByIdAsync(int id)
         {
             var resume = _dbContext
-                .Resumes.Where(r => r.id == id)
+                .Resumes
+                .Where(r => r.id == id)
                 .FirstOrDefault();
 
             if (resume is null)
@@ -263,17 +264,22 @@ namespace RecruitmentApp.Services
             var resume = _dbContext
                 .Resumes
                 .Include(r => r.Experiences)
-                .First(r => r.id == dto.ResumeId);
+                .FirstOrDefault(r => r.id == dto.ResumeId && r.UserId == _userContextService.GetUserId);
 
             if (resume is null)
                 throw new NotFoundException("Resume not found");
-            var experiences = _dbContext
+
+            var experience = _dbContext
                 .Experiences
-                .FirstOrDefault(r => r.id == dto.ExperienceId);
-            if (experiences is null)
+                .FirstOrDefault(r => r.id == dto.ExperienceId && r.UserId == _userContextService.GetUserId);
+
+            if (experience is null)
                 throw new NotFoundException("Experience not found");
 
-            var _experienceResume = new ExperienceResume { ResumeId = dto.ResumeId, ExperienceId = dto.ExperienceId };
+            var _experienceResume = new ExperienceResume { ResumeId = resume.id, ExperienceId = experience.id };
+            bool isAttached = resume.Experiences.Exists(r => r.ExperienceId == _experienceResume.ExperienceId);
+            if (isAttached)
+                throw new ValidationException("Experience already attached");
 
             resume.Experiences.Add(_experienceResume);
             _dbContext.SaveChanges();
@@ -283,14 +289,21 @@ namespace RecruitmentApp.Services
             var resume = _dbContext
                 .Resumes
                 .Include(r => r.Experiences)
-                .First(r => r.id == dto.ResumeId);
+                .FirstOrDefault(r => r.id == dto.ResumeId && r.UserId == _userContextService.GetUserId);
 
             if (resume is null)
                 throw new NotFoundException("Resume not found");
 
+            var experience = _dbContext
+                .Experiences
+                .FirstOrDefault(r => r.id == dto.ExperienceId && r.UserId == _userContextService.GetUserId);
+
+            if (experience is null)
+                throw new NotFoundException("Experience not found");
+
             var _resumeExperience = resume.Experiences.FirstOrDefault(s => s.ExperienceId == dto.ExperienceId);
             if (_resumeExperience is null)
-                throw new NotFoundException("Experience not found");
+                throw new NotFoundException("Experience not attached");
 
             resume.Experiences.Remove(_resumeExperience);
             _dbContext.SaveChanges();
