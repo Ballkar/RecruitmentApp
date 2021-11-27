@@ -264,17 +264,24 @@ namespace RecruitmentApp.Services
             var resume = _dbContext
                 .Resumes
                 .Include(r => r.Experiences)
-                .FirstOrDefault(r => r.id == dto.ResumeId && r.UserId == _userContextService.GetUserId);
+                .FirstOrDefault(r => r.id == dto.ResumeId);
 
             if (resume is null)
                 throw new NotFoundException("Resume not found");
 
+            if (resume.UserId != _userContextService.GetUserId)
+                throw new ForbidException("Resume not allowed");
+            
             var experience = _dbContext
                 .Experiences
-                .FirstOrDefault(r => r.id == dto.ExperienceId && r.UserId == _userContextService.GetUserId);
+                .FirstOrDefault(r => r.id == dto.ExperienceId);
 
             if (experience is null)
                 throw new NotFoundException("Experience not found");
+
+
+            if (experience.UserId != _userContextService.GetUserId)
+                throw new ForbidException("Experience not allowed");
 
             var _experienceResume = new ExperienceResume { ResumeId = resume.id, ExperienceId = experience.id };
             bool isAttached = resume.Experiences.Exists(r => r.ExperienceId == _experienceResume.ExperienceId);
@@ -289,17 +296,23 @@ namespace RecruitmentApp.Services
             var resume = _dbContext
                 .Resumes
                 .Include(r => r.Experiences)
-                .FirstOrDefault(r => r.id == dto.ResumeId && r.UserId == _userContextService.GetUserId);
+                .FirstOrDefault(r => r.id == dto.ResumeId);
 
             if (resume is null)
                 throw new NotFoundException("Resume not found");
 
+            if (resume.UserId != _userContextService.GetUserId)
+                throw new ForbidException("Resume not allowed");
+
             var experience = _dbContext
                 .Experiences
-                .FirstOrDefault(r => r.id == dto.ExperienceId && r.UserId == _userContextService.GetUserId);
+                .FirstOrDefault(r => r.id == dto.ExperienceId);
 
             if (experience is null)
                 throw new NotFoundException("Experience not found");
+
+            if (experience.UserId != _userContextService.GetUserId)
+                throw new ForbidException("Experience not allowed");
 
             var _resumeExperience = resume.Experiences.FirstOrDefault(s => s.ExperienceId == dto.ExperienceId);
             if (_resumeExperience is null)
