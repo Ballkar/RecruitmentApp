@@ -165,6 +165,7 @@ namespace RecruitmentApp.Services
         {
             var resume = _dbContext
                 .Resumes
+                .Include(r => r.Skills)
                 .FirstOrDefault(r => r.id == id);
 
             if (resume is null)
@@ -185,6 +186,16 @@ namespace RecruitmentApp.Services
             resume.City = dto.City;
             resume.GithubUrl = dto.GithubUrl;
             resume.Description = dto.Description;
+            resume.SeniorityId = dto.SeniorityId;
+
+            resume.Skills.ToList().ForEach(skill => resume.Skills.Remove(skill));
+
+            foreach (var skill in dto.SkillsId)
+            {
+                var _resumeSkill = new ResumeSkill { ResumeId = resume.id, SkillId = skill };
+
+                resume.Skills.Add(_resumeSkill);
+            }
 
             _dbContext.SaveChanges();
         }

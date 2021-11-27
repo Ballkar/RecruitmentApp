@@ -39,14 +39,14 @@ namespace RecruitmentApp.Models.Validators
                 .WithMessage("Field is empty")
                 .WithErrorCode("422");
             
-            RuleFor(x => x.GithubUrl)
-                .NotEmpty()
-                .WithMessage("Field is empty")
-                .WithErrorCode("422")
-                .Custom((value, context) =>
-                {
+            //RuleFor(x => x.GithubUrl)
+            //    .NotEmpty()
+            //    .WithMessage("Field is empty")
+            //    .WithErrorCode("422")
+            //    .Custom((value, context) =>
+            //    {
                     
-                });
+            //    });
 
             RuleFor(x => x.Description)
                 .MinimumLength(6)
